@@ -70,6 +70,10 @@ const DEMO_PRESETS: Record<string, Signals> = {
 };
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const RESTORATION_COOLDOWN_MS = 3200;
+const STRESS_THROTTLE_MS = 600;
+const RECOVERY_THROTTLE_MS = 600;
+const PRESET_THROTTLE_MS = 800;
 
 const defaultInsight: InsightResult = {
   source: "fallback",
@@ -120,7 +124,14 @@ export default function App() {
   const [latestBoostMessage, setLatestBoostMessage] = useState("");
   const [coords, setCoords] = useState<{ lat: number | null; lon: number | null }>({ lat: null, lon: null });
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isRestorationCooling, setIsRestorationCooling] = useState(false);
   const simRunIdRef = useRef(0);
+  const simBusyRef = useRef(false);
+  const actionLastRunRef = useRef({
+    stress: 0,
+    recovery: 0,
+    preset: 0
+  });
 
   const energyScore = useMemo(() => calculateEnergy(signals), [signals]);
   const state = getGardenState(energyScore);
@@ -189,16 +200,25 @@ export default function App() {
     }).then(setResearchNudge);
   }, [insight.result.burnout_risk, insight.result.emotional_state, insight.result.restoration_action]);
 
-  const onStressEvent = () => {
+  const onStressEvent = (ignoreThrottle = false) => {
+    if (isSimulating && !ignoreThrottle) return;
+    const now = Date.now();
+    if (!ignoreThrottle && now - actionLastRunRef.current.stress < STRESS_THROTTLE_MS) return;
+    actionLastRunRef.current.stress = now;
     setSignals((prev) => ({ ...prev, stressEvents: prev.stressEvents + 1 }));
   };
 
-  const onRecoveryAction = () => {
+  const onRecoveryAction = (ignoreThrottle = false) => {
+    if (isSimulating && !ignoreThrottle) return;
+    const now = Date.now();
+    if (!ignoreThrottle && now - actionLastRunRef.current.recovery < RECOVERY_THROTTLE_MS) return;
+    actionLastRunRef.current.recovery = now;
     setSignals((prev) => ({ ...prev, recoveryActions: prev.recoveryActions + 1 }));
     setLatestBoostMessage("Recovery action logged. Your garden is responding.");
   };
 
-  const onCompleteRestoration = () => {
+  const onCompleteRestoration = (ignoreCooldown = false) => {
+    if ((isSimulating && !ignoreCooldown) || (isRestorationCooling && !ignoreCooldown)) return;
     setHealingPulse(true);
     setSignals((prev) => ({
       ...prev,
@@ -206,48 +226,58 @@ export default function App() {
       stressEvents: Math.max(0, prev.stressEvents - 1)
     }));
     setLatestBoostMessage("Restoration complete. Warmth and color are returning to your garden.");
+    if (!ignoreCooldown) {
+      setIsRestorationCooling(true);
+      setTimeout(() => setIsRestorationCooling(false), RESTORATION_COOLDOWN_MS);
+    }
 
     setTimeout(() => setHealingPulse(false), 1200);
   };
 
   const stopSimulation = () => {
     simRunIdRef.current += 1;
+    simBusyRef.current = false;
     setIsSimulating(false);
     setLatestBoostMessage("Simulation stopped. You can continue manually.");
   };
 
   const startSimulation = async () => {
-    if (isSimulating) return;
+    if (simBusyRef.current) return;
+    simBusyRef.current = true;
     const runId = simRunIdRef.current + 1;
     simRunIdRef.current = runId;
     setIsSimulating(true);
 
-    const stillRunning = () => simRunIdRef.current === runId;
-    const applyPreset = async (preset: Signals, label: string, waitMs = 2200) => {
-      if (!stillRunning()) return;
-      setSignals({ ...preset });
-      setLatestBoostMessage(`Simulation: ${label}`);
-      await wait(waitMs);
-    };
+    try {
+      const stillRunning = () => simRunIdRef.current === runId;
+      const applyPreset = async (preset: Signals, label: string, waitMs = 2200) => {
+        if (!stillRunning()) return;
+        setSignals({ ...preset });
+        setLatestBoostMessage(`Simulation: ${label}`);
+        await wait(waitMs);
+      };
 
-    await applyPreset(DEMO_PRESETS.calmMorning, "Calm Morning");
-    await applyPreset(DEMO_PRESETS.meetingOverload, "Meeting Overload");
-    await applyPreset(DEMO_PRESETS.doomscrollSpiral, "Doomscroll Spiral");
-    if (stillRunning()) {
-      setSignals((prev) => ({ ...prev, stressEvents: prev.stressEvents + 1 }));
-      setLatestBoostMessage("Simulation: Stress event triggered.");
-      await wait(1700);
-    }
-    await applyPreset(DEMO_PRESETS.stormyDay, "Stormy Day");
-    if (stillRunning()) {
-      onCompleteRestoration();
-      setLatestBoostMessage("Simulation: Restoration spell completed.");
-      await wait(2000);
-    }
-    await applyPreset(DEMO_PRESETS.recoveryMode, "Recovery Mode", 1800);
+      await applyPreset(DEMO_PRESETS.calmMorning, "Calm Morning");
+      await applyPreset(DEMO_PRESETS.meetingOverload, "Meeting Overload");
+      await applyPreset(DEMO_PRESETS.doomscrollSpiral, "Doomscroll Spiral");
+      if (stillRunning()) {
+        onStressEvent(true);
+        setLatestBoostMessage("Simulation: Stress event triggered.");
+        await wait(1700);
+      }
+      await applyPreset(DEMO_PRESETS.stormyDay, "Stormy Day");
+      if (stillRunning()) {
+        onCompleteRestoration(true);
+        setLatestBoostMessage("Simulation: Restoration spell completed.");
+        await wait(2000);
+      }
+      await applyPreset(DEMO_PRESETS.recoveryMode, "Recovery Mode", 1800);
 
-    if (stillRunning()) {
-      setLatestBoostMessage("Simulation complete. Garden recovered and context refreshed.");
+      if (stillRunning()) {
+        setLatestBoostMessage("Simulation complete. Garden recovered and context refreshed.");
+      }
+    } finally {
+      simBusyRef.current = false;
       setIsSimulating(false);
     }
   };
@@ -293,7 +323,12 @@ export default function App() {
           onSignalsChange={setSignals}
           onStressEvent={onStressEvent}
           onRecoveryAction={onRecoveryAction}
+          disableActions={isSimulating}
           onPresetApply={(preset) => {
+            if (isSimulating) return;
+            const now = Date.now();
+            if (now - actionLastRunRef.current.preset < PRESET_THROTTLE_MS) return;
+            actionLastRunRef.current.preset = now;
             setSignals(preset);
             setLatestBoostMessage("Preset applied. Re-reading world context...");
           }}
@@ -303,6 +338,8 @@ export default function App() {
           source={insight.source}
           onCompleteRestoration={onCompleteRestoration}
           latestBoostMessage={latestBoostMessage}
+          disableActions={isSimulating}
+          restorationCooling={isRestorationCooling}
         />
         <WhyThisHelpsCard research={researchNudge} />
       </section>

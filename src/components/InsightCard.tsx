@@ -5,9 +5,18 @@ type InsightCardProps = {
   source: InsightResult["source"];
   onCompleteRestoration: () => void;
   latestBoostMessage: string;
+  disableActions?: boolean;
+  restorationCooling?: boolean;
 };
 
-export function InsightCard({ insight, source, onCompleteRestoration, latestBoostMessage }: InsightCardProps) {
+export function InsightCard({
+  insight,
+  source,
+  onCompleteRestoration,
+  latestBoostMessage,
+  disableActions = false,
+  restorationCooling = false
+}: InsightCardProps) {
   return (
     <section className="card insight-card">
       <div className="insight-header">
@@ -25,8 +34,8 @@ export function InsightCard({ insight, source, onCompleteRestoration, latestBoos
         <p className="contextual-reason">{insight.contextual_reason}</p>
       </div>
 
-      <button className="magic-btn" onClick={onCompleteRestoration}>
-        Complete Restoration
+      <button className="magic-btn" onClick={onCompleteRestoration} disabled={disableActions || restorationCooling}>
+        {restorationCooling ? "Restoration Charging..." : "Complete Restoration"}
       </button>
 
       <p className="micro-message">{latestBoostMessage || insight.micro_message}</p>

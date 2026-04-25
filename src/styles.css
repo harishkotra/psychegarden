@@ -540,6 +540,13 @@ input:focus-visible {
   box-shadow: var(--focus-ring);
 }
 
+button:disabled,
+textarea:disabled,
+input:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 .disclaimer {
   font-size: 0.78rem;
   color: #4c6f5d;

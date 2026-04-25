@@ -6,6 +6,7 @@ type SignalControlsProps = {
   onStressEvent: () => void;
   onRecoveryAction: () => void;
   onPresetApply: (preset: Signals) => void;
+  disableActions?: boolean;
 };
 
 const PRESETS: Array<{ name: string; values: Signals }> = [
@@ -31,7 +32,14 @@ const PRESETS: Array<{ name: string; values: Signals }> = [
   }
 ];
 
-export function SignalControls({ signals, onSignalsChange, onStressEvent, onRecoveryAction, onPresetApply }: SignalControlsProps) {
+export function SignalControls({
+  signals,
+  onSignalsChange,
+  onStressEvent,
+  onRecoveryAction,
+  onPresetApply,
+  disableActions = false
+}: SignalControlsProps) {
   const setField = <K extends keyof Signals>(key: K, value: Signals[K]) => {
     onSignalsChange({ ...signals, [key]: value });
   };
@@ -48,6 +56,7 @@ export function SignalControls({ signals, onSignalsChange, onStressEvent, onReco
           max={12}
           step={0.5}
           value={signals.sleepHours}
+          disabled={disableActions}
           onChange={(e) => setField("sleepHours", Number(e.target.value))}
         />
       </label>
@@ -60,6 +69,7 @@ export function SignalControls({ signals, onSignalsChange, onStressEvent, onReco
           max={14}
           step={0.5}
           value={signals.screenTime}
+          disabled={disableActions}
           onChange={(e) => setField("screenTime", Number(e.target.value))}
         />
       </label>
@@ -72,6 +82,7 @@ export function SignalControls({ signals, onSignalsChange, onStressEvent, onReco
           max={12}
           step={1}
           value={signals.meetingLoad}
+          disabled={disableActions}
           onChange={(e) => setField("meetingLoad", Number(e.target.value))}
         />
       </label>
@@ -84,6 +95,7 @@ export function SignalControls({ signals, onSignalsChange, onStressEvent, onReco
           max={20000}
           step={250}
           value={signals.steps}
+          disabled={disableActions}
           onChange={(e) => setField("steps", Number(e.target.value))}
         />
       </label>
@@ -94,22 +106,23 @@ export function SignalControls({ signals, onSignalsChange, onStressEvent, onReco
           rows={3}
           placeholder="How are you feeling right now?"
           value={signals.moodText}
+          disabled={disableActions}
           onChange={(e) => setField("moodText", e.target.value)}
         />
       </label>
 
       <div className="control-buttons">
-        <button className="subtle-btn" onClick={onStressEvent}>
+        <button className="subtle-btn" onClick={onStressEvent} disabled={disableActions}>
           Stress Event (-)
         </button>
-        <button className="subtle-btn" onClick={onRecoveryAction}>
+        <button className="subtle-btn" onClick={onRecoveryAction} disabled={disableActions}>
           Recovery Action (+)
         </button>
       </div>
 
       <div className="preset-wrap">
         {PRESETS.map((preset) => (
-          <button key={preset.name} className="preset-btn" onClick={() => onPresetApply({ ...preset.values })}>
+          <button key={preset.name} className="preset-btn" onClick={() => onPresetApply({ ...preset.values })} disabled={disableActions}>
             {preset.name}
           </button>
         ))}
