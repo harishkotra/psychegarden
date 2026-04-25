@@ -14,8 +14,9 @@ export type PublicContextInput = {
 };
 
 export async function getPublicContext(_input: PublicContextInput): Promise<PublicContext> {
-  // Runtime implementation lives in brightData.js for Node execution.
-  // This TS module is the typed adapter contract for future Bright Data MCP integration.
+  // Runtime implementation lives in brightData.js for Node execution and now
+  // attempts Bright Data Web MCP JSON-RPC calls with safe fallback.
+  // This TS file remains the adapter contract surface for app code.
   return {
     source: "fallback",
     air_quality_hint: null,

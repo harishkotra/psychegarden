@@ -8,8 +8,12 @@ function buildOptions(env = process.env) {
   return {
     enableExternalContext: boolFromEnv(env.ENABLE_EXTERNAL_CONTEXT, true),
     tavilyApiKey: env.TAVILY_API_KEY,
+    brightDataApiToken: env.BRIGHT_DATA_API_TOKEN,
     brightDataApiKey: env.BRIGHT_DATA_API_KEY,
-    brightDataMcpUrl: env.BRIGHT_DATA_MCP_URL
+    brightDataMcpUrl: env.BRIGHT_DATA_MCP_URL,
+    brightDataProMode: boolFromEnv(env.BRIGHT_DATA_PRO_MODE, false),
+    brightDataGroups: env.BRIGHT_DATA_GROUPS,
+    brightDataTools: env.BRIGHT_DATA_TOOLS
   };
 }
 

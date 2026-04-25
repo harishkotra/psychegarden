@@ -15,12 +15,19 @@ All integrations are optional and fault-tolerant.
 
 - Open-Meteo (no key required)
 - Tavily (`TAVILY_API_KEY`, optional)
-- Bright Data-ready adapter (`BRIGHT_DATA_API_KEY` or `BRIGHT_DATA_MCP_URL`, optional)
+- Bright Data Web MCP adapter (`BRIGHT_DATA_API_TOKEN` preferred, or `BRIGHT_DATA_API_KEY`, optional)
 - OpenAI (`OPENAI_API_KEY`, optional)
 
 Control external calls globally with:
 
 - `ENABLE_EXTERNAL_CONTEXT=true|false`
+
+Optional Bright Data MCP mode flags:
+
+- `BRIGHT_DATA_MCP_URL` (defaults to hosted `https://mcp.brightdata.com/mcp`)
+- `BRIGHT_DATA_PRO_MODE=true|false`
+- `BRIGHT_DATA_GROUPS` (example: `geo,code`)
+- `BRIGHT_DATA_TOOLS` (example: `search_engine`)
 
 When disabled or keys are missing, PsycheGarden safely falls back to demo context.
 
