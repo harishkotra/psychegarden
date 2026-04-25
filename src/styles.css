@@ -76,6 +76,13 @@ body {
   color: #3a6450;
 }
 
+.sim-status {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: #2f6a49;
+  font-weight: 600;
+}
+
 .weather-chip {
   display: grid;
   gap: 0.25rem;
@@ -441,6 +448,11 @@ textarea:focus-visible {
   color: #235437;
   background: rgba(145, 205, 167, 0.45);
   transition: transform 160ms ease, background 160ms ease;
+}
+
+.sim-btn {
+  justify-self: end;
+  margin-top: 0.2rem;
 }
 
 .insight-header {
@@ -892,6 +904,10 @@ input:focus-visible {
 
   .weather-chip {
     text-align: left;
+  }
+
+  .sim-btn {
+    justify-self: start;
   }
 
   .world-grid {

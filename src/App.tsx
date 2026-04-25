@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { GardenScene } from "./components/GardenScene";
 import { EnergyMeter } from "./components/EnergyMeter";
 import { SignalControls } from "./components/SignalControls";
@@ -20,6 +20,56 @@ const defaultSignals: Signals = {
   stressEvents: 0,
   recoveryActions: 1
 };
+
+const DEMO_PRESETS: Record<string, Signals> = {
+  calmMorning: {
+    sleepHours: 8,
+    screenTime: 1.5,
+    meetingLoad: 1,
+    steps: 3500,
+    moodText: "Calm and focused.",
+    stressEvents: 0,
+    recoveryActions: 1
+  },
+  meetingOverload: {
+    sleepHours: 6,
+    screenTime: 5,
+    meetingLoad: 9,
+    steps: 2200,
+    moodText: "My brain feels crowded with calls.",
+    stressEvents: 1,
+    recoveryActions: 0
+  },
+  doomscrollSpiral: {
+    sleepHours: 5,
+    screenTime: 9,
+    meetingLoad: 4,
+    steps: 1200,
+    moodText: "I feel mentally exhausted but I still have work left.",
+    stressEvents: 2,
+    recoveryActions: 0
+  },
+  stormyDay: {
+    sleepHours: 6.5,
+    screenTime: 6,
+    meetingLoad: 6,
+    steps: 1800,
+    moodText: "Heavy day and low focus.",
+    stressEvents: 1,
+    recoveryActions: 0
+  },
+  recoveryMode: {
+    sleepHours: 7.5,
+    screenTime: 2.5,
+    meetingLoad: 2,
+    steps: 7500,
+    moodText: "Taking it slow and restoring.",
+    stressEvents: 0,
+    recoveryActions: 2
+  }
+};
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const defaultInsight: InsightResult = {
   source: "fallback",
@@ -69,6 +119,8 @@ export default function App() {
   const [healingPulse, setHealingPulse] = useState(false);
   const [latestBoostMessage, setLatestBoostMessage] = useState("");
   const [coords, setCoords] = useState<{ lat: number | null; lon: number | null }>({ lat: null, lon: null });
+  const [isSimulating, setIsSimulating] = useState(false);
+  const simRunIdRef = useRef(0);
 
   const energyScore = useMemo(() => calculateEnergy(signals), [signals]);
   const state = getGardenState(energyScore);
@@ -158,6 +210,48 @@ export default function App() {
     setTimeout(() => setHealingPulse(false), 1200);
   };
 
+  const stopSimulation = () => {
+    simRunIdRef.current += 1;
+    setIsSimulating(false);
+    setLatestBoostMessage("Simulation stopped. You can continue manually.");
+  };
+
+  const startSimulation = async () => {
+    if (isSimulating) return;
+    const runId = simRunIdRef.current + 1;
+    simRunIdRef.current = runId;
+    setIsSimulating(true);
+
+    const stillRunning = () => simRunIdRef.current === runId;
+    const applyPreset = async (preset: Signals, label: string, waitMs = 2200) => {
+      if (!stillRunning()) return;
+      setSignals({ ...preset });
+      setLatestBoostMessage(`Simulation: ${label}`);
+      await wait(waitMs);
+    };
+
+    await applyPreset(DEMO_PRESETS.calmMorning, "Calm Morning");
+    await applyPreset(DEMO_PRESETS.meetingOverload, "Meeting Overload");
+    await applyPreset(DEMO_PRESETS.doomscrollSpiral, "Doomscroll Spiral");
+    if (stillRunning()) {
+      setSignals((prev) => ({ ...prev, stressEvents: prev.stressEvents + 1 }));
+      setLatestBoostMessage("Simulation: Stress event triggered.");
+      await wait(1700);
+    }
+    await applyPreset(DEMO_PRESETS.stormyDay, "Stormy Day");
+    if (stillRunning()) {
+      onCompleteRestoration();
+      setLatestBoostMessage("Simulation: Restoration spell completed.");
+      await wait(2000);
+    }
+    await applyPreset(DEMO_PRESETS.recoveryMode, "Recovery Mode", 1800);
+
+    if (stillRunning()) {
+      setLatestBoostMessage("Simulation complete. Garden recovered and context refreshed.");
+      setIsSimulating(false);
+    }
+  };
+
   const usingDemoContext =
     insight.source === "fallback" ||
     unifiedContext.public_context.source === "fallback" ||
@@ -169,11 +263,15 @@ export default function App() {
         <div>
           <h1>PsycheGarden</h1>
           <p className="subtitle">A calm reflection space where your mental energy becomes a living garden.</p>
+          {isSimulating ? <p className="sim-status">Auto demo is running...</p> : null}
         </div>
         <div className="weather-chip">
           <span>{weather.condition}</span>
           <span>{Math.round(weather.temperature_c)} C</span>
           <span>{weather.is_day ? "Day cycle" : "Night cycle"}</span>
+          <button className="subtle-btn sim-btn" onClick={isSimulating ? stopSimulation : startSimulation}>
+            {isSimulating ? "Stop Simulation" : "Simulate Demo"}
+          </button>
         </div>
       </header>
 
