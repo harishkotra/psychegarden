@@ -1,0 +1,30 @@
+{
+  "name": "psychegarden",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "author": "Harish Kotra", 
+  "scripts": {
+    "dev": "concurrently \"npm:dev:api\" \"vite\"",
+    "dev:api": "node server/devServer.js",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server/server.js",
+    "test": "node --import tsx --test tests/**/*.test.ts"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "concurrently": "^9.0.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}
