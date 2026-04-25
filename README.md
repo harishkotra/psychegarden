@@ -2,6 +2,8 @@
 
 PsycheGarden is a deployable PWA hackathon MVP where mental vitality is visualized as a living garden. It blends local simulated signals with optional external context (Open-Meteo, Tavily, Bright Data-ready adapter) and optional OpenAI reflection.
 
+<img width="900" height="720" alt="pysche-garden" src="https://github.com/user-attachments/assets/5ab50c4c-2cc3-44b0-bf62-8d3a9c4f4bad" />
+
 ## Stack
 
 - React + TypeScript + Vite frontend
